@@ -33,7 +33,7 @@ From the shell:
 
 dotCloud proxy2 uses either a Redis or ZooKeeper server (or both) to manage its 
 configuration (and to share its state across the multiple workers). You can use 
-the Redis server to change its configuration while it's running or simply check 
+the Redis/ZooKeeper server to change its configuration while it's running or simply check 
 the health state of a backend.
 
     {
@@ -51,8 +51,12 @@ the health state of a backend.
                 "cert": "/etc/ssl/ssl.crt"
             }
         },
-        "zkHost": "127.0.0.1",
-        "zkPort": 2181,
+        "zkHosts" : [
+            {
+                "zkHost": "127.0.0.1",
+                "zkPort": 2181
+            }
+        ],
         "redisHost": "127.0.0.1",
 	      "redisPort": 6379,
         "redisDatabase": 0,
@@ -158,18 +162,19 @@ zookeeper
 Configuration can also be managed through ZooKeeper.
 
 It also makes it simple to write configuration adapters. It would be trivial
-to load a plain text configuration file into Redis (and update it at runtime).
+to load a plain text configuration file into ZooKeeper (and update it at runtime).
 
 Different configuration adapters will follow, but for the moment you have to
-provision the Redis manually.
+provision the ZooKeeper manually.
 
 Let's take the same example from redis, I want to proxify requests to 2 backends 
 for the hostname www.dotcloud.com. The 2 backends IP are 192.168.0.42 and 
 192.168.0.43 and they serve the HTTP traffic on the port 80.
 
-We will interact with zookeeper using the [kazoo]() python library. All of the 
-examples will be done from the python shell. We will assume that you have
-imported both `kazoo` and `urllib` and have created a kazoo client `zk`.
+We will interact with zookeeper using the [kazoo](https://github.com/python-zk/kazoo) 
+python library. All of the examples will be done from the python shell. We will 
+assume that you have imported both `kazoo` and `urllib` and have created a 
+kazoo client named `zk`.
 
 Here are the steps I will follow:
 
@@ -252,9 +257,9 @@ replaced by a new copy by the master process.
 
 ### Dynamic configuration
 
-You can alter the configuration stored in Redis at any time. There is no
+You can alter the configuration stored in Redis/ZooKeeper at any time. There is no
 need to restart Hipache, or to signal it that the configuration has changed:
-Hipache will re-query Redis at each request. Worried about performance?
+Hipache will re-query Redis/ZooKeeper at each request. Worried about performance?
 We were, too! And we found out that accessing a local Redis is helluva fast.
 So fast, that it didn't increase measurably the HTTP request latency!
 
