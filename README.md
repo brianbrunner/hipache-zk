@@ -31,10 +31,10 @@ From the shell:
 
 ### 2. Configuring the server (config.json)
 
-dotCloud proxy2 uses a Redis server to manage its configuration (and to share
-its state across the multiple workers). You can use the Redis server to change
-its configuration while it's running or simply check the health state of a
-backend.
+dotCloud proxy2 uses either a Redis or ZooKeeper server (or both) to manage its 
+configuration (and to share its state across the multiple workers). You can use 
+the Redis server to change its configuration while it's running or simply check 
+the health state of a backend.
 
     {
         "server": {
@@ -51,8 +51,10 @@ backend.
                 "cert": "/etc/ssl/ssl.crt"
             }
         },
+        "zkHost": "127.0.0.1",
+        "zkPort": 2181,
         "redisHost": "127.0.0.1",
-	    "redisPort": 6379,
+	      "redisPort": 6379,
         "redisDatabase": 0,
         "redisPassword": "password"
         
@@ -70,6 +72,7 @@ each backend (per worker)
 * __server.address__: IPv4 Addresses  listening (HTTP and HTTPS)
 * __server.address6__: IPv6 Addresses  listening (HTTP and HTTPS)
 * __server.https__: SSL configuration (omit this section to disable HTTPS)
+* __zkHost__ and __zkPort__: ZooKeeper configuration
 * __redisHost__ and __redisPort__: Redis configuration (you can omit those
 parameters to use the local redis on the default port)
 * __redisDatabase__: Redis number database (default 0)
@@ -102,7 +105,10 @@ configuration file in order to run the tests.
     $ SETTINGS_FLAVOR=test hipache
     
 
-### 4. Configuring a vhost (redis)
+### 4. Configuring a vhost 
+
+redis
+-----
 
 All the configuration is managed through Redis. This makes it possible to
 update the configuration dynamically and gracefully while the server is
@@ -142,6 +148,48 @@ The frontend identifer is `mywebsite`, it could be anything.
         1) "mywebsite"
         2) "http://192.168.0.42:80"
         3) "http://192.168.0.43:80"
+
+While the server is running, any of these steps can be re-run without messing
+up with the traffic.
+
+zookeeper
+---------
+
+Configuration can also be managed through ZooKeeper.
+
+It also makes it simple to write configuration adapters. It would be trivial
+to load a plain text configuration file into Redis (and update it at runtime).
+
+Different configuration adapters will follow, but for the moment you have to
+provision the Redis manually.
+
+Let's take the same example from redis, I want to proxify requests to 2 backends 
+for the hostname www.dotcloud.com. The 2 backends IP are 192.168.0.42 and 
+192.168.0.43 and they serve the HTTP traffic on the port 80.
+
+We will interact with zookeeper using the [kazoo]() python library. All of the 
+examples will be done from the python shell. We will assume that you have
+imported both `kazoo` and `urllib` and have created a kazoo client `zk`.
+
+Here are the steps I will follow:
+
+1. __Create__ the frontend and associate an identifier
+
+        >>> zk.create("/frontend/www.dotcloud.com",makepath=True)
+        u'/frontend/www.dotcloud.com'
+
+2. __Associate__ the 2 backends. Note that we encode the URLs of the backend so they 
+are ZooKeeper-friendly.
+
+        >>> zk.create("/frontend/www.dotcloud.com/%s" % urllib.quote("http://192.168.0.42:80",""))
+        u'/frontend/www.dotcloud.com/http%3A%2F%2F192.168.0.42%3A80'
+        >>> zk.create("/frontend/www.dotcloud.com/%s" % urllib.quote("http://192.168.0.43:80",""))
+        u'/frontend/www.dotcloud.com/http%3A%2F%2F192.168.0.43%3A80'
+
+3. __Review__ the configuration
+
+        >>> zk.get_children("/frontend/www.dotcloud.com")
+        [u'http%3A%2F%2F192.168.0.43%3A80', u'http%3A%2F%2F192.168.0.42%3A80']
 
 While the server is running, any of these steps can be re-run without messing
 up with the traffic.

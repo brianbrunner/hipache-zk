@@ -1,5 +1,5 @@
 {
-  "name": "hipache",
+  "name": "hipache-zk",
   "version": "0.2.4",
   "description": "Complete high-scaled reverse-proxy solution",
   "keywords": [
@@ -39,11 +39,18 @@
     "email": "sam.alba@gmail.com",
     "url": "http://www.dotcloud.com/"
   },
+  "contributors": [
+    {
+      "name": "Brian Brunner",
+      "email": "brian.brunner@gmail.com",
+      "url": "http://www.brianbrunner.com/"
+    }
+  ],
   "maintainer": [
-    "Sam Alba <sam.alba@gmail.com>"
+    "Brian Brunner <brian.brunner@gmail.com>"
   ],
   "repository": {
     "type": "git",
-    "url": "http://github.com/dotcloud/hipache.git"
+    "url": "http://github.com/brianbrunner/hipache-zk.git"
   }
 }
