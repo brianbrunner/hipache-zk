@@ -1,0 +1,16 @@
+{
+    "server": {
+        "accessLog": "/var/log/hipache_access.log",
+        "port": 80,
+        "workers": 5,
+        "maxSockets": 100,
+        "deadBackendTTL": 30,
+        "address": ["0.0.0.0"]
+    },
+    "zks": [
+        {
+            "host": "127.0.0.1",
+            "port": 2181
+        }
+    ]
+}
